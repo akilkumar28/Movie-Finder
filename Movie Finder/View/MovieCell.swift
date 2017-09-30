@@ -10,12 +10,14 @@ import UIKit
 import CoreData
 
 class MovieCell: UITableViewCell {
+    
+    //MARK: IBOutlets
     @IBOutlet weak var designView: UIView!
     @IBOutlet weak var locationLbl: UILabel!
-    
     @IBOutlet weak var titleLbl: UILabel!
-    
     @IBOutlet weak var yearLbl: UILabel!
+    
+    
     override func awakeFromNib() {
         super.awakeFromNib()
         designView.layer.cornerRadius = 5
@@ -24,6 +26,8 @@ class MovieCell: UITableViewCell {
         designView.layer.shadowOpacity = 0.7
         designView.layer.shadowOffset = CGSize.zero
     }
+    
+    //MARK: Functions
 
     func configureCell(movie:NSManagedObject) {
         let mainTitle = movie.value(forKey: "title") as? String
