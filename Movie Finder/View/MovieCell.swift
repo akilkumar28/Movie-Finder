@@ -10,6 +10,7 @@ import UIKit
 import CoreData
 
 class MovieCell: UITableViewCell {
+    @IBOutlet weak var designView: UIView!
     @IBOutlet weak var locationLbl: UILabel!
     
     @IBOutlet weak var titleLbl: UILabel!
@@ -17,6 +18,11 @@ class MovieCell: UITableViewCell {
     @IBOutlet weak var yearLbl: UILabel!
     override func awakeFromNib() {
         super.awakeFromNib()
+        designView.layer.cornerRadius = 5
+        designView.layer.shadowColor = UIColor.black.cgColor
+        designView.layer.shadowRadius = 5
+        designView.layer.shadowOpacity = 0.7
+        designView.layer.shadowOffset = CGSize.zero
     }
 
     func configureCell(movie:NSManagedObject) {

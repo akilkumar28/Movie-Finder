@@ -11,19 +11,23 @@ import CoreData
 
 class MainVC: UIViewController {
     
-    @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
+    //MARK: IBOutlets
     
+    @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     @IBOutlet weak var tableview: UITableView!
-    @IBOutlet weak var segmentControle: UISegmentedControl!
+    @IBOutlet weak var segmentControl: UISegmentedControl!
     
     
     var check = false
     var movieArray = [NSManagedObject]()
     
-    override func viewDidLoad() {
+    
+    
+    override func viewDidLoad(){
         super.viewDidLoad()
+        segmentControl.selectedSegmentIndex = 0
         check = true
-        checkData()
+        attemptFetch()
         tableview.delegate = self
         tableview.dataSource = self
     }
@@ -37,11 +41,13 @@ class MainVC: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         if !check{
-            checkData()
+            attemptFetch()
         }
     }
     
-    func checkData(){
+    //MARK: Normal Functions
+    
+    func attemptFetch(){
         guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
             return
         }
@@ -49,8 +55,21 @@ class MainVC: UIViewController {
         
         let fetchrequest = NSFetchRequest<NSManagedObject>(entityName: "Movies")
         
+        let titleSort = NSSortDescriptor(key: "title", ascending: true)
+        let yearSort = NSSortDescriptor(key: "year", ascending: true)
+        let locationSort = NSSortDescriptor(key: "location", ascending: true)
+        
+        if segmentControl.selectedSegmentIndex == 0 {
+            fetchrequest.sortDescriptors = [titleSort]
+        } else if segmentControl.selectedSegmentIndex == 1 {
+            fetchrequest.sortDescriptors = [yearSort]
+        } else if segmentControl.selectedSegmentIndex == 2 {
+            fetchrequest.sortDescriptors = [locationSort]
+        }
+        
         do {
             self.movieArray = try managedContxt.fetch(fetchrequest)
+            self.tableview.reloadData()
         } catch let error as NSError {
             print("Could not fetch. \(error), \(error.userInfo)")
         }
@@ -124,8 +143,31 @@ class MainVC: UIViewController {
         self.check = false
     }
     
+    
+    //MARK: Segue
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if let destination = segue.destination as? MapViewVC {
+            if let sender = sender as? Movies {
+                destination.movie = sender
+            }
+    }
+    }
+    
+    
+    
+    
+    
+    
+    //MARK: IBActions
+    
+    @IBAction func segmentChanged(_ sender: Any) {
+        attemptFetch()
+    }
 
 }
+
+//MARK: Extenions
 
 
 extension MainVC: UITableViewDelegate,UITableViewDataSource {
@@ -165,14 +207,14 @@ extension MainVC: UITableViewDelegate,UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableview.deselectRow(at: indexPath, animated: true)
+        let movie = movieArray[indexPath.row]
+        performSegue(withIdentifier: "MapViewVC", sender: movie)
+        
     }
     
     func tableView(_ tableView: UITableView, shouldSpringLoadRowAt indexPath: IndexPath, with context: UISpringLoadedInteractionContext) -> Bool {
         return true
     }
-    
-    
-    
     
 }
 
