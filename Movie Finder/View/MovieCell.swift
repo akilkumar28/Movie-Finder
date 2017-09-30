@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import CoreData
 
 class MovieCell: UITableViewCell {
     @IBOutlet weak var locationLbl: UILabel!
@@ -17,17 +18,14 @@ class MovieCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
     }
-    
-    
-    
-    func configureCell(movie:Movie) {
-        
-        titleLbl.text = movie.title
-        yearLbl.text = "\(movie.year)"
-        locationLbl.text = movie.location
+
+    func configureCell(movie:NSManagedObject) {
+        let mainTitle = movie.value(forKey: "title") as? String
+        titleLbl.text = mainTitle ?? "Not available"
+        let year = movie.value(forKey: "year") as? String
+        yearLbl.text = year ?? "Not available"
+        let location = movie.value(forKey: "location") as? String
+        locationLbl.text = location ?? "Not available"
        
     }
-
-    
-
 }

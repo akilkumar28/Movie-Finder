@@ -7,20 +7,23 @@
 //
 
 import UIKit
+import CoreData
 
 class MainVC: UIViewController {
     
-
+    @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
+    
     @IBOutlet weak var tableview: UITableView!
     @IBOutlet weak var segmentControle: UISegmentedControl!
     
     
-    
-    var movieArray = [Movie]()
+    var check = false
+    var movieArray = [NSManagedObject]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        loadData()
+        check = true
+        checkData()
         tableview.delegate = self
         tableview.dataSource = self
     }
@@ -30,13 +33,47 @@ class MainVC: UIViewController {
         
     }
     
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        if !check{
+            checkData()
+        }
+    }
+    
+    func checkData(){
+        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
+            return
+        }
+        let managedContxt = appDelegate.persistentContainer.viewContext
+        
+        let fetchrequest = NSFetchRequest<NSManagedObject>(entityName: "Movies")
+        
+        do {
+            self.movieArray = try managedContxt.fetch(fetchrequest)
+        } catch let error as NSError {
+            print("Could not fetch. \(error), \(error.userInfo)")
+        }
+        
+        if self.movieArray.count < 1 {
+            loadData()
+        }
+        self.activityIndicator.isHidden = true
+        self.check = false
+    }
+    
     func loadData(){
+    
         let urlString = "https://data.sfgov.org/api/views/yitu-d5am/rows.json?accessType=DOWNLOAD"
         guard let url = URL(string: urlString) else {return }
         URLSession.shared.dataTask(with: url) { (data, response, error) in
             if let error  = error {
                 print(error.localizedDescription)
             }else{
+                DispatchQueue.main.async {
+                    self.activityIndicator.isHidden = false
+                    self.activityIndicator.startAnimating()
+                }
                 guard let data = data else {return}
                 guard let jsonResult = try? JSONSerialization.jsonObject(with: data, options:.allowFragments) as? [String:Any] else {return }
                 
@@ -45,35 +82,48 @@ class MainVC: UIViewController {
                 if let data = jsonObject["data"] as? [Array<Any>] {
                     for x in data {
                         var mainTitle = "Not Available"
-                        var mainYear = 0000
+                        var mainYear = "Not Available"
                         var mainLocation = "Not Available"
                         if let title = x[8] as? String {
                             mainTitle = title
                         }
                         if let year = x[9] as? String {
-                            if let convertedYear = Int(year) {
-                                mainYear = convertedYear
-                            }
+                            mainYear = year
                         }
                         
                         if let location = x[10] as? String {
                             mainLocation = location
                         }
                         
-                        let movie = Movie(title: mainTitle, year: mainYear, location: mainLocation)
-                        
-                        self.movieArray.append(movie)
+                        DispatchQueue.main.async {
+                            guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {return}
+                            let managedContext = appDelegate.persistentContainer.viewContext
+                            
+                            let movie = Movies(context: managedContext)
+                            movie.title = mainTitle
+                            movie.year = mainYear
+                            movie.location = mainLocation
+                            
+                            do {
+                                try managedContext.save()
+                                self.movieArray.append(movie)
+                            } catch let error as NSError{
+                                print("Could not save",error.localizedDescription)
+                            }
+                        }
+
                     }
                 }
                 DispatchQueue.main.async {
-                    self.tableview.reloadData()
+                self.tableview.reloadData()
+                self.activityIndicator.stopAnimating()
+                self.activityIndicator.isHidden = true
                 }
-                guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {return}
-                let managedCOntext = appDelegate.persistentContainer.viewContext
             }
-            
         }.resume()
+        self.check = false
     }
+    
 
 }
 
@@ -112,9 +162,14 @@ extension MainVC: UITableViewDelegate,UITableViewDataSource {
    
     //MARK: Table View Delegate Methods
     
-//    func tableView(_ tableView: UITableView, shouldSpringLoadRowAt indexPath: IndexPath, with context: UISpringLoadedInteractionContext) -> Bool {
-//        return true
-//    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableview.deselectRow(at: indexPath, animated: true)
+    }
+    
+    func tableView(_ tableView: UITableView, shouldSpringLoadRowAt indexPath: IndexPath, with context: UISpringLoadedInteractionContext) -> Bool {
+        return true
+    }
     
     
     
