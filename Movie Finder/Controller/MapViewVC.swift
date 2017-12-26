@@ -21,6 +21,7 @@ class MapViewVC: UIViewController,MKMapViewDelegate {
     //MARK: Properties
     var movie:Movies?
     
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         if let name = movie?.title {
